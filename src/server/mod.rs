@@ -1,9 +1,7 @@
 pub mod types;
 use crate::server::types::{Language, RenderError, RenderSuccess};
-use actix_cors::Cors;
-use actix_files::{Files, NamedFile};
-use actix_web::{http::StatusCode, web, App, HttpRequest, HttpResponse, HttpServer};
-use std::env;
+use actix_files::NamedFile;
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use std::path::PathBuf;
 use weresocool::generation::{RenderReturn, RenderType};
 use weresocool::interpretable::{InputType, Interpretable};
