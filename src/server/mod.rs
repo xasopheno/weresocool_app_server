@@ -7,13 +7,6 @@ use weresocool::generation::{RenderReturn, RenderType};
 use weresocool::interpretable::{InputType, Interpretable};
 use weresocool_error::ErrorInner;
 
-pub async fn get_file(req: HttpRequest) -> actix_web::Result<NamedFile> {
-    let mut path = PathBuf::from("../sound/renders");
-    let file: PathBuf = req.match_info().query("filename").parse().unwrap();
-    path.push(file);
-    Ok(NamedFile::open(path)?)
-}
-
 pub async fn single_page_app(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     let path = PathBuf::from("./src/server/build/index.html");
     Ok(NamedFile::open(path)?)

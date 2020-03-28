@@ -15,7 +15,7 @@ use web_view::Content;
 #[folder = "src/server/build"]
 struct Asset;
 
-const RUN_APP: bool = false;
+const RUN_APP: bool = true;
 
 fn assets(req: HttpRequest) -> HttpResponse {
     let path = if req.path() == "/" {
