@@ -1,38 +1,41 @@
 pub mod types;
-use crate::server::types::{Language, RenderError, RenderSuccess};
+use crate::server::types::Language;
 use actix_files::NamedFile;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use std::path::PathBuf;
-use weresocool::generation::{RenderReturn, RenderType};
-use weresocool::interpretable::{InputType, Interpretable};
-use weresocool_error::ErrorInner;
+use std::sync::{Arc, Mutex};
+use weresocool::{
+    //generation::{RenderReturn, RenderType},
+    interpretable::InputType,
+    manager::{BufferManager, RenderManager},
+};
+
+//use weresocool_error::ErrorInner;
+//
 
 pub async fn single_page_app(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     let path = PathBuf::from("./src/server/build/index.html");
     Ok(NamedFile::open(path)?)
 }
 
-pub async fn render(req: web::Json<Language>) -> HttpResponse {
-    let result = InputType::Language(&req.language).make(RenderType::StereoWaveform);
-    match result {
-        Ok(render_return) => match render_return {
-            RenderReturn::StereoWaveform(wav) => HttpResponse::Ok()
-                .content_type("application/json")
-                .status(StatusCode::OK)
-                .json(RenderSuccess::new(wav)),
-            _ => panic!(),
-        },
-        Err(parse_error) => {
-            let inner = *parse_error.inner;
-            match inner {
-                ErrorInner::ParseError(error) => HttpResponse::Ok()
-                    .content_type("application/json")
-                    .status(StatusCode::OK)
-                    .json(RenderError::new(error)),
-                _ => panic!(),
-            }
+pub async fn render(
+    render_manager: web::Data<Arc<Mutex<RenderManager>>>,
+    buffer_manager: web::Data<Arc<Mutex<BufferManager>>>,
+    req: web::Json<Language>,
+) -> HttpResponse {
+    match render_manager
+        .lock()
+        .unwrap()
+        .prepare_render(InputType::Language(&req.language))
+    {
+        Ok(_) => {
+            buffer_manager.lock().unwrap().inc_render_write_buffer();
+            println!("Success.");
         }
+        _ => {}
     }
+
+    HttpResponse::new(StatusCode::OK)
 }
 
 #[cfg(test)]
@@ -45,6 +48,7 @@ mod tests {
         let language = Language {
             language: "{f: 100, l: 1, g: 1, p: 0}\nmain={Tm 1}\n".to_string(),
         };
+
         let req = test::TestRequest::post()
             .uri("/api/render")
             .header(header::CONTENT_TYPE, "application/json")

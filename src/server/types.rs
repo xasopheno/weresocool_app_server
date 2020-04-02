@@ -19,14 +19,14 @@ pub struct RenderSuccess {
     pub buffers: StereoWaveform,
 }
 
-impl RenderSuccess {
-    pub const fn new(buffers: StereoWaveform) -> Self {
-        Self {
-            response_type: RenderResponse::RenderSuccess,
-            buffers,
-        }
-    }
-}
+//impl RenderSuccess {
+//pub const fn new(buffers: StereoWaveform) -> Self {
+//Self {
+//response_type: RenderResponse::RenderSuccess,
+//buffers,
+//}
+//}
+//}
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct RenderError {
@@ -34,11 +34,11 @@ pub struct RenderError {
     pub error: ParseError,
 }
 
-impl RenderError {
-    pub const fn new(error: ParseError) -> Self {
-        Self {
-            response_type: RenderResponse::RenderError,
-            error,
-        }
-    }
-}
+//impl RenderError {
+//pub const fn new(error: ParseError) -> Self {
+//Self {
+//response_type: RenderResponse::RenderError,
+//error,
+//}
+//}
+//}
