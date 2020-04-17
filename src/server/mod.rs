@@ -5,13 +5,10 @@ use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use weresocool::{
-    //generation::{RenderReturn, RenderType},
     interpretable::InputType,
-    manager::{BufferManager, RenderManager},
+    manager::{RenderManager},
 };
 
-//use weresocool_error::ErrorInner;
-//
 
 pub async fn single_page_app(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     let path = PathBuf::from("./src/server/build/index.html");
@@ -20,7 +17,6 @@ pub async fn single_page_app(_req: HttpRequest) -> actix_web::Result<NamedFile> 
 
 pub async fn render(
     render_manager: web::Data<Arc<Mutex<RenderManager>>>,
-    buffer_manager: web::Data<Arc<Mutex<BufferManager>>>,
     req: web::Json<Language>,
 ) -> HttpResponse {
     match render_manager
@@ -29,7 +25,6 @@ pub async fn render(
         .prepare_render(InputType::Language(&req.language))
     {
         Ok(_) => {
-            buffer_manager.lock().unwrap().inc_render_write_buffer();
             println!("Success.");
         }
         _ => {}

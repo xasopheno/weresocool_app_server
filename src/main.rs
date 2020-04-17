@@ -12,13 +12,10 @@ use std::{borrow::Cow, sync::mpsc, thread};
 use web_view;
 use web_view::Content;
 use weresocool::{
-    generation::parsed_to_render::sum_all_waveforms,
-    instrument::StereoWaveform,
-    manager::{BufferManager, RenderManager},
-    portaudio::real_time_managed,
+    manager::RenderManager,
+    portaudio::real_time_render_manager,
     settings::{default_settings, Settings},
 };
-const SETTINGS: Settings = default_settings();
 
 #[derive(RustEmbed)]
 #[folder = "src/server/build"]
@@ -55,8 +52,6 @@ fn assets(req: HttpRequest) -> HttpResponse {
 pub async fn main() -> Result<(), actix_web::Error> {
     let render_manager = Arc::new(Mutex::new(RenderManager::init_silent()));
     let render_manager_clone = Arc::clone(&render_manager);
-    let buffer_manager = Arc::new(Mutex::new(BufferManager::init_silent()));
-    let buffer_manager_clone = Arc::clone(&buffer_manager);
 
     std::env::set_var("RUST_LOG", "socool_server=info, actix_web=info");
     env_logger::init();
@@ -70,14 +65,12 @@ pub async fn main() -> Result<(), actix_web::Error> {
     let (server_tx, server_rx) = mpsc::channel();
 
     let rm = web::Data::new(Arc::clone(&render_manager));
-    let bm = web::Data::new(Arc::clone(&buffer_manager));
 
     thread::spawn(move || {
         let sys = actix_rt::System::new("WereSoCool Server");
         let server = HttpServer::new(move || {
             App::new()
                 .app_data(rm.clone())
-                .app_data(bm.clone())
                 .wrap(Cors::new().finish())
                 .service(web::scope("/api").route("/render", web::post().to(render)))
                 .route("/compose", web::get().to(single_page_app))
@@ -93,25 +86,9 @@ pub async fn main() -> Result<(), actix_web::Error> {
     });
 
     thread::Builder::new()
-        .name("Renderer".to_string())
-        .spawn(move || loop {
-            let batch: Option<Vec<StereoWaveform>> = render_manager_clone
-                .lock()
-                .unwrap()
-                .render_batch(SETTINGS.buffer_size);
-
-            if let Some(b) = batch {
-                if !b.is_empty() {
-                    let stereo_waveform = sum_all_waveforms(b);
-                    buffer_manager_clone.lock().unwrap().write(stereo_waveform);
-                }
-            }
-        })?;
-
-    thread::Builder::new()
         .name("Audio".to_string())
         .spawn(move || loop {
-            let mut stream = real_time_managed(Arc::clone(&buffer_manager)).unwrap();
+            let mut stream = real_time_render_manager(Arc::clone(&render_manager)).unwrap();
             stream.start().unwrap();
 
             println!("Stream started");
