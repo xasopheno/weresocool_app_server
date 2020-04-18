@@ -11,17 +11,13 @@ use std::sync::{Arc, Mutex};
 use std::{borrow::Cow, sync::mpsc, thread};
 use web_view;
 use web_view::Content;
-use weresocool::{
-    manager::RenderManager,
-    portaudio::real_time_render_manager,
-    settings::{default_settings, Settings},
-};
+use weresocool::{manager::RenderManager, portaudio::real_time_render_manager};
 
 #[derive(RustEmbed)]
 #[folder = "src/server/build"]
 struct Asset;
 
-const RUN_APP: bool = true;
+const RUN_APP: bool = false;
 
 fn assets(req: HttpRequest) -> HttpResponse {
     let path = if req.path() == "/" {
@@ -85,39 +81,39 @@ pub async fn main() -> Result<(), actix_web::Error> {
         let _ = sys.run();
     });
 
-    thread::Builder::new()
-        .name("Audio".to_string())
-        .spawn(move || loop {
-            let mut stream = real_time_render_manager(Arc::clone(&render_manager)).unwrap();
-            stream.start().unwrap();
+    //thread::Builder::new()
+    //.name("Audio".to_string())
+    //.spawn(move || loop {
+    let mut stream = real_time_render_manager(Arc::clone(&render_manager)).unwrap();
+    stream.start().unwrap();
 
-            println!("Stream started");
+    println!("Stream started");
 
-            while let true = stream.is_active().unwrap() {}
+    while let true = stream.is_active().unwrap() {}
 
-            stream.stop().unwrap();
+    stream.stop().unwrap();
 
-            println!("Stream stopped");
-        })?;
+    println!("Stream stopped");
 
-    let server = server_rx.recv().unwrap();
+    //let server = server_rx.recv().unwrap();
 
-    if RUN_APP {
-        web_view::builder()
-            .title("WereSoCool")
-            .content(Content::Url(format!("http://localhost:{}", port)))
-            .size(1200, 1000)
-            .resizable(true)
-            .debug(true)
-            .user_data(())
-            .invoke_handler(|_webview, _arg| Ok(()))
-            .run()
-            .unwrap();
-    }
+    //if RUN_APP {
+    //web_view::builder()
+    //.title("WereSoCool")
+    //.content(Content::Url(format!("http://localhost:{}", port)))
+    //.size(1200, 1000)
+    //.resizable(true)
+    //.debug(true)
+    //.user_data(())
+    //.invoke_handler(|_webview, _arg| Ok(()))
+    //.run()
+    //.unwrap();
 
-    //gracefully shutdown actix web server
-
-    let _ = server.stop(true).await;
+    ////gracefully shutdown actix web server
+    //let _ = server.stop(true).await;
+    //} else {
+    //loop {}
+    //}
 
     println!("Shutdown");
 
