@@ -9,15 +9,11 @@ use rust_embed::RustEmbed;
 use std::env;
 use std::sync::{Arc, Mutex};
 use std::{borrow::Cow, sync::mpsc, thread};
-use web_view;
-use web_view::Content;
 use weresocool::{manager::RenderManager, portaudio::real_time_render_manager};
 
 #[derive(RustEmbed)]
 #[folder = "src/server/build"]
 struct Asset;
-
-const RUN_APP: bool = false;
 
 fn assets(req: HttpRequest) -> HttpResponse {
     let path = if req.path() == "/" {
@@ -47,18 +43,17 @@ fn assets(req: HttpRequest) -> HttpResponse {
 #[actix_rt::main]
 pub async fn main() -> Result<(), actix_web::Error> {
     let render_manager = Arc::new(Mutex::new(RenderManager::init_silent()));
-    let render_manager_clone = Arc::clone(&render_manager);
 
     std::env::set_var("RUST_LOG", "socool_server=info, actix_web=info");
     env_logger::init();
 
     let port = env::var("PORT")
-        .unwrap_or_else(|_| "4599".to_string())
+        .unwrap_or_else(|_| "4588".to_string())
         .parse()
         .expect("PORT must be a number");
     println!("Listening on {}", &port);
 
-    let (server_tx, server_rx) = mpsc::channel();
+    let (server_tx, _server_rx) = mpsc::channel();
 
     let rm = web::Data::new(Arc::clone(&render_manager));
 
@@ -81,9 +76,6 @@ pub async fn main() -> Result<(), actix_web::Error> {
         let _ = sys.run();
     });
 
-    //thread::Builder::new()
-    //.name("Audio".to_string())
-    //.spawn(move || loop {
     let mut stream = real_time_render_manager(Arc::clone(&render_manager)).unwrap();
     stream.start().unwrap();
 
@@ -94,26 +86,6 @@ pub async fn main() -> Result<(), actix_web::Error> {
     stream.stop().unwrap();
 
     println!("Stream stopped");
-
-    //let server = server_rx.recv().unwrap();
-
-    //if RUN_APP {
-    //web_view::builder()
-    //.title("WereSoCool")
-    //.content(Content::Url(format!("http://localhost:{}", port)))
-    //.size(1200, 1000)
-    //.resizable(true)
-    //.debug(true)
-    //.user_data(())
-    //.invoke_handler(|_webview, _arg| Ok(()))
-    //.run()
-    //.unwrap();
-
-    ////gracefully shutdown actix web server
-    //let _ = server.stop(true).await;
-    //} else {
-    //loop {}
-    //}
 
     println!("Shutdown");
 
