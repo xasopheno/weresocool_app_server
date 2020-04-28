@@ -2,17 +2,19 @@ pub mod types;
 use crate::server::types::Language;
 use actix_files::NamedFile;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use weresocool::{
-    interpretable::InputType,
-    manager::{RenderManager},
-};
-
+use weresocool::{interpretable::InputType, manager::RenderManager};
 
 pub async fn single_page_app(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     let path = PathBuf::from("./src/server/build/index.html");
     Ok(NamedFile::open(path)?)
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub enum Success {
+    RenderSuccess(String),
 }
 
 pub async fn render(
@@ -26,11 +28,13 @@ pub async fn render(
     {
         Ok(_) => {
             println!("Success.");
+            HttpResponse::Ok().json(Success::RenderSuccess("Render Successful".to_string()))
         }
-        _ => {}
+        Err(parse_error) => {
+            let inner = *parse_error.inner;
+            HttpResponse::Ok().json(inner.into_serializeable())
+        }
     }
-
-    HttpResponse::new(StatusCode::OK)
 }
 
 #[cfg(test)]

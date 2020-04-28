@@ -77,6 +77,7 @@ pub async fn main() -> Result<(), actix_web::Error> {
     });
 
     let mut stream = real_time_render_manager(Arc::clone(&render_manager)).unwrap();
+
     stream.start().unwrap();
 
     println!("Stream started");
