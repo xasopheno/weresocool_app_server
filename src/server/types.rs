@@ -23,19 +23,3 @@ pub struct RenderError {
     pub error: ParseError,
 }
 
-impl RenderSuccess {
-    pub const fn new() -> Self {
-        Self {
-            response_type: RenderResponse::RenderSuccess(),
-        }
-    }
-}
-
-impl RenderError {
-    pub const fn new(error: ParseError) -> Self {
-        Self {
-            response_type: RenderResponse::RenderError(),
-            error,
-        }
-    }
-}

@@ -1,7 +1,7 @@
 pub mod types;
 use crate::server::types::Language;
 use actix_files::NamedFile;
-use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -28,7 +28,7 @@ pub async fn render(
     {
         Ok(_) => {
             println!("Success.");
-            HttpResponse::Ok().json(Success::RenderSuccess("Render Successful".to_string()))
+            HttpResponse::Ok().json(Success::RenderSuccess("Success".to_string()))
         }
         Err(parse_error) => {
             let inner = *parse_error.inner;
