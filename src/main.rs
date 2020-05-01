@@ -7,6 +7,7 @@ use actix_web::{body::Body, web, App, HttpRequest, HttpResponse, HttpServer};
 use mime_guess::from_path;
 use rust_embed::RustEmbed;
 use std::env;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::{borrow::Cow, sync::mpsc, thread};
 use weresocool::{manager::RenderManager, portaudio::real_time_render_manager};
@@ -53,7 +54,7 @@ pub async fn main() -> Result<(), actix_web::Error> {
         .expect("PORT must be a number");
     println!("Listening on {}", &port);
 
-    let (server_tx, _server_rx) = mpsc::channel();
+    let (server_tx, server_rx) = mpsc::channel();
 
     let rm = web::Data::new(Arc::clone(&render_manager));
 
@@ -71,24 +72,32 @@ pub async fn main() -> Result<(), actix_web::Error> {
         .unwrap();
 
         let server = server.run();
-
         let _ = server_tx.send(server);
         let _ = sys.run();
     });
+    let term = Arc::new(AtomicBool::new(false));
+    signal_hook::flag::register(signal_hook::SIGINT, Arc::clone(&term))?;
+    signal_hook::flag::register(signal_hook::SIGTERM, Arc::clone(&term))?;
+
+    let server = server_rx.recv().unwrap();
 
     let mut stream = real_time_render_manager(Arc::clone(&render_manager)).unwrap();
 
+    println!("Stream started");
     stream.start().unwrap();
 
-    println!("Stream started");
+    while !term.load(Ordering::Relaxed) {}
 
-    while let true = stream.is_active().unwrap() {}
+    server.stop(true).await;
+    println!("Server Stopped");
 
     stream.stop().unwrap();
+    stream.close().unwrap();
+    println!("PortAudioStream stopped");
 
-    println!("Stream stopped");
-
-    println!("Shutdown");
+    println!("Application Shutdown");
+    //})
+    //.await;
 
     Ok(())
 }
