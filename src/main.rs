@@ -85,8 +85,8 @@ pub async fn main() -> Result<(), actix_web::Error> {
 
     println!("Stream started");
     stream.start().unwrap();
-
     while !term.load(Ordering::Relaxed) {}
+    //while let true = stream.is_active() {};
 
     server.stop(true).await;
     println!("Server Stopped");
@@ -96,8 +96,6 @@ pub async fn main() -> Result<(), actix_web::Error> {
     println!("PortAudioStream stopped");
 
     println!("Application Shutdown");
-    //})
-    //.await;
 
     Ok(())
 }
